@@ -120,8 +120,6 @@ import {
 } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { DateTimePicker } from "@/components/ui/date-time-picker"
-import { format } from "date-fns"
-import { ja } from "date-fns/locale"
 
 // インライン編集コンポーネント
 function EditableCell({ 
@@ -167,7 +165,7 @@ function EditableCell({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <div 
-            className={`cursor-pointer hover:bg-muted/50 rounded px-2 py-1 transition-colors ${className}`}
+            className={`cursor-pointer hover:bg-muted/50 rounded px-2 py-2 sm:py-1 transition-colors touch-manipulation min-h-[44px] sm:min-h-[32px] flex items-center ${className}`}
             role="button"
             tabIndex={0}
           >
@@ -209,7 +207,7 @@ function EditableCell({
 
     return (
       <div 
-        className={`cursor-pointer hover:bg-muted/50 rounded px-2 py-1 transition-colors ${className}`}
+        className={`cursor-pointer hover:bg-muted/50 rounded px-2 py-2 sm:py-1 transition-colors touch-manipulation min-h-[44px] sm:min-h-[32px] flex items-center ${className}`}
         onClick={() => setIsEditing(true)}
         role="button"
         tabIndex={0}
@@ -279,9 +277,9 @@ function DragHandle({ id }: { id: number }) {
       {...listeners}
       variant="ghost"
       size="icon"
-      className="text-muted-foreground size-7 hover:bg-transparent"
+      className="text-muted-foreground h-8 w-8 touch-manipulation hover:bg-transparent active:bg-muted/50"
     >
-      <IconGripVertical className="text-muted-foreground size-3" />
+      <IconGripVertical className="text-muted-foreground h-4 w-4" />
       <span className="sr-only">Drag to reorder</span>
     </Button>
   )
@@ -500,14 +498,14 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2 pt-4">
-        <Button type="submit" className="flex-1">
+        <Button type="submit" className="flex-1 h-10 sm:h-9">
           問題を追加
         </Button>
         <Button 
           type="button" 
           variant="outline" 
           onClick={() => handleOpenChange(false)}
-          className="flex-1"
+          className="flex-1 h-10 sm:h-9"
         >
           キャンセル
         </Button>
@@ -519,7 +517,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
     return (
       <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerTrigger asChild>
-          <Button variant="outline" size="sm" className="flex-shrink-0">
+          <Button variant="outline" size="sm" className="flex-shrink-0 h-10 px-4 touch-manipulation">
             <IconPlus className="h-4 w-4" />
             <span className="hidden sm:inline ml-2">問題を追加</span>
           </Button>
@@ -542,7 +540,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="flex-shrink-0">
+        <Button variant="outline" size="sm" className="flex-shrink-0 h-9 px-3 touch-manipulation">
           <IconPlus className="h-4 w-4" />
           <span className="hidden sm:inline ml-2">問題を追加</span>
         </Button>
@@ -886,44 +884,38 @@ export function DataTable({
     <>
     <Tabs
       defaultValue="problems"
-      className="w-full flex-col justify-start gap-4 lg:gap-6"
+      className="w-full flex-col justify-start gap-3 sm:gap-4 lg:gap-6"
     >
-      <div className="flex flex-col gap-4 px-2 sm:px-4 lg:px-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 px-3 sm:px-4 lg:px-6 sm:flex-row sm:items-center sm:justify-between">
         <Label htmlFor="view-selector" className="sr-only">
           表示
         </Label>
-        <Select defaultValue="problems">
-          <SelectTrigger
-            className="flex w-full sm:w-fit @4xl/main:hidden"
-            size="sm"
-            id="view-selector"
-          >
-            <SelectValue placeholder="表示を選択" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="problems">問題一覧</SelectItem>
-            <SelectItem value="progress">進捗状況</SelectItem>
-            <SelectItem value="contests">コンテスト</SelectItem>
-            <SelectItem value="calendar">学習予定</SelectItem>
-          </SelectContent>
-        </Select>
-        <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="problems">問題一覧</TabsTrigger>
-          <TabsTrigger value="progress">
-            進捗状況 <Badge variant="secondary">{data.filter(task => task.status === "挑戦中").length}</Badge>
+        <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden w-full sm:w-auto **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 md:flex">
+          <TabsTrigger value="problems" className="text-xs sm:text-sm">問題一覧</TabsTrigger>
+          <TabsTrigger value="contests" className="text-xs sm:text-sm">
+            コンテスト <Badge variant="secondary" className="ml-1 text-xs">{data.filter(task => task.status === "AC").length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="contests">
-            コンテスト <Badge variant="secondary">{data.filter(task => task.status === "AC").length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="calendar">学習予定</TabsTrigger>
         </TabsList>
-        <div className="flex items-center gap-2 justify-end">
+        
+        {/* モバイル用のタブセレクト */}
+        <div className="flex md:hidden w-full">
+          <Select value="problems">
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="表示を選択" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="problems">問題一覧</SelectItem>
+              <SelectItem value="contests">コンテスト</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center gap-2 justify-end w-full sm:w-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-shrink-0">
+              <Button variant="outline" size="sm" className="flex-shrink-0 hidden lg:flex">
                 <IconLayoutColumns className="h-4 w-4" />
                 <span className="hidden sm:inline ml-2">列をカスタマイズ</span>
-                <span className="sm:hidden ml-2">列</span>
                 <IconChevronDown className="h-4 w-4 ml-1" />
               </Button>
             </DropdownMenuTrigger>
@@ -958,7 +950,36 @@ export function DataTable({
         value="problems"
         className="relative flex flex-col gap-4 overflow-auto px-2 sm:px-4 lg:px-6"
       >
-        <div className="overflow-hidden rounded-lg border">
+        {/* モバイル表示: カード形式 */}
+        <div className="block lg:hidden">
+          <DndContext
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragEnd={handleDragEnd}
+            sensors={sensors}
+            id={sortableId}
+          >
+            <SortableContext
+              items={dataIds}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3">
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <MobileTaskCard key={row.id} row={row} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask} allTasks={data} />
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center py-12 text-center text-muted-foreground">
+                    問題がありません。
+                  </div>
+                )}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
+
+        {/* デスクトップ表示: テーブル形式 */}
+        <div className="hidden lg:block overflow-hidden rounded-lg border">
           <div className="overflow-x-auto">
             <DndContext
               collisionDetection={closestCenter}
@@ -1011,14 +1032,14 @@ export function DataTable({
             </DndContext>
           </div>
         </div>
-        <div className="flex flex-col gap-4 px-2 sm:px-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-muted-foreground hidden flex-1 text-sm sm:flex">
+        <div className="flex flex-col gap-3 px-3 sm:px-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-muted-foreground hidden flex-1 text-xs sm:text-sm lg:flex">
             {table.getFilteredSelectedRowModel().rows.length} / {" "}
             {table.getFilteredRowModel().rows.length} 件選択中
           </div>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
-            <div className="hidden items-center gap-2 sm:flex">
-              <Label htmlFor="rows-per-page" className="text-sm font-medium whitespace-nowrap">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6 lg:gap-8">
+            <div className="hidden items-center gap-2 lg:flex">
+              <Label htmlFor="rows-per-page" className="text-xs sm:text-sm font-medium whitespace-nowrap">
                 表示件数
               </Label>
               <Select
@@ -1027,7 +1048,7 @@ export function DataTable({
                   table.setPageSize(Number(value))
                 }}
               >
-                <SelectTrigger size="sm" className="w-20" id="rows-per-page">
+                <SelectTrigger size="sm" className="w-16 sm:w-20" id="rows-per-page">
                   <SelectValue
                     placeholder={table.getState().pagination.pageSize}
                   />
@@ -1041,11 +1062,11 @@ export function DataTable({
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center justify-center text-sm font-medium">
+            <div className="flex items-center justify-center text-xs sm:text-sm font-medium">
               {table.getState().pagination.pageIndex + 1} / {" "}
               {table.getPageCount()} ページ
             </div>
-            <div className="flex items-center gap-2 justify-center">
+            <div className="flex items-center gap-1 sm:gap-2 justify-center">
               <Button
                 variant="outline"
                 className="hidden h-8 w-8 p-0 sm:flex"
@@ -1053,121 +1074,41 @@ export function DataTable({
                 disabled={!table.getCanPreviousPage()}
               >
                 <span className="sr-only">最初のページへ</span>
-                <IconChevronsLeft />
+                <IconChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
-                className="size-8"
-                size="icon"
+                className="h-8 w-8 p-0"
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
               >
                 <span className="sr-only">前のページへ</span>
-                <IconChevronLeft />
+                <IconChevronLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
-                className="size-8"
-                size="icon"
+                className="h-8 w-8 p-0"
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
               >
                 <span className="sr-only">次のページへ</span>
-                <IconChevronRight />
+                <IconChevronRight className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
-                className="hidden size-8 sm:flex"
-                size="icon"
+                className="hidden h-8 w-8 p-0 sm:flex"
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                 disabled={!table.getCanNextPage()}
               >
                 <span className="sr-only">最後のページへ</span>
-                <IconChevronsRight />
+                <IconChevronsRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
       </TabsContent>
-      <TabsContent
-        value="progress"
-        className="flex flex-col px-2 sm:px-4 lg:px-6"
-      >
-        <div className="grid gap-4 lg:gap-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-card rounded-lg border p-3 sm:p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-green-600">{data.filter(task => task.status === "AC").length}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground">AC済み</div>
-            </div>
-            <div className="bg-card rounded-lg border p-3 sm:p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-blue-600">{data.filter(task => task.status === "挑戦中").length}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground">挑戦中</div>
-            </div>
-            <div className="bg-card rounded-lg border p-3 sm:p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-yellow-600">{data.filter(task => task.status === "解答確認中").length}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground">解答確認中</div>
-            </div>
-            <div className="bg-card rounded-lg border p-3 sm:p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-gray-600">{data.filter(task => task.status === "未着手").length}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground">未着手</div>
-            </div>
-          </div>
-          
-          <div className="bg-card rounded-lg border p-3 sm:p-4">
-            <h3 className="text-base sm:text-lg font-semibold mb-4">過去6ヶ月の進捗</h3>
-            <ChartContainer config={chartConfig} className="h-[200px] sm:h-[300px]">
-              <AreaChart
-                accessibilityLayer
-                data={generateChartData(data)}
-                margin={{
-                  left: 12,
-                  right: 12,
-                }}
-              >
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="dot" />}
-                />
-                <Area
-                  dataKey="inProgress"
-                  type="natural"
-                  fill="var(--color-inProgress)"
-                  fillOpacity={0.6}
-                  stroke="var(--color-inProgress)"
-                  stackId="a"
-                />
-                <Area
-                  dataKey="completed"
-                  type="natural"
-                  fill="var(--color-completed)"
-                  fillOpacity={0.4}
-                  stroke="var(--color-completed)"
-                  stackId="a"
-                />
-              </AreaChart>
-            </ChartContainer>
-          </div>
-        </div>
-      </TabsContent>
-      <TabsContent value="contests" className="flex flex-col px-2 sm:px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground text-sm sm:text-base">
-          コンテスト情報がここに表示されます
-        </div>
-      </TabsContent>
-      <TabsContent
-        value="calendar"
-        className="flex flex-col px-2 sm:px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground text-sm sm:text-base">
-          学習スケジュールがここに表示されます
-        </div>
+      <TabsContent value="contests" className="flex flex-col px-3 sm:px-4 lg:px-6">
+        <ContestCalendar />
       </TabsContent>
     </Tabs>
 
@@ -1191,6 +1132,37 @@ export function DataTable({
     </Dialog>
     </>
   )
+}
+
+// AtCoder Beginner Contest のダミーデータ
+const generateABCContests = () => {
+  const contests = []
+  const today = new Date()
+  const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1) // 先月から
+  
+  for (let i = 0; i < 8; i++) {
+    const contestDate = new Date(startDate)
+    contestDate.setDate(startDate.getDate() + (i * 7)) // 週1回
+    contestDate.setHours(21, 0, 0, 0) // 21:00開始
+    
+    const contestNumber = 380 + i
+    const endDate = new Date(contestDate)
+    endDate.setHours(22, 40, 0, 0) // 100分間
+    
+    contests.push({
+      id: `abc${contestNumber}`,
+      title: `AtCoder Beginner Contest ${contestNumber}`,
+      startTime: contestDate,
+      endTime: endDate,
+      platform: 'AtCoder',
+      difficulty: 'Beginner',
+      url: `https://atcoder.jp/contests/abc${contestNumber}`,
+      status: contestDate < today ? 'finished' : 'upcoming',
+      participants: Math.floor(Math.random() * 3000) + 8000, // 8000-11000人
+    })
+  }
+  
+  return contests
 }
 
 // チャートデータをタスクデータから動的に生成する関数
@@ -1236,6 +1208,544 @@ const chartConfig = {
     color: "var(--primary)",
   },
 } satisfies ChartConfig
+
+function MobileTaskCard({ row, onUpdateTask, onDeleteTask, allTasks }: {
+  row: Row<z.infer<typeof schema>>
+  onUpdateTask: (id: number, updatedTask: Partial<z.infer<typeof schema>>) => void
+  onDeleteTask: (id: number) => void
+  allTasks: z.infer<typeof schema>[]
+}) {
+  const { transform, transition, setNodeRef, isDragging } = useSortable({
+    id: row.original.id,
+  })
+
+  const item = row.original
+
+  const statusColors = {
+    "未着手": "bg-gray-100 text-gray-600",
+    "挑戦中": "bg-blue-100 text-blue-600", 
+    "解答確認中": "bg-yellow-100 text-yellow-600",
+    "AC": "bg-green-100 text-green-600",
+    "WA": "bg-red-100 text-red-600",
+  }
+
+  const difficultyColors = {
+    "Easy": "bg-green-100 text-green-600",
+    "Medium": "bg-yellow-100 text-yellow-600", 
+    "Hard": "bg-red-100 text-red-600",
+    "★1": "bg-gray-100 text-gray-600",
+    "★2": "bg-blue-100 text-blue-600",
+    "★3": "bg-yellow-100 text-yellow-600",
+    "★4": "bg-orange-100 text-orange-600",
+    "★5": "bg-red-100 text-red-600",
+  }
+
+  const platformColors = {
+    "AtCoder": "bg-orange-100 text-orange-600",
+    "Codeforces": "bg-blue-100 text-blue-600",
+    "LeetCode": "bg-yellow-100 text-yellow-600",
+    "yukicoder": "bg-purple-100 text-purple-600",
+    "AOJ": "bg-green-100 text-green-600",
+  }
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "未設定"
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return "無効な日付"
+      return date.toISOString().split('T')[0]
+    } catch {
+      return "無効な日付"
+    }
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`bg-card rounded-lg border p-4 space-y-3 transition-all duration-200 ${
+        isDragging ? 'opacity-70 shadow-lg scale-105' : 'hover:shadow-md'
+      }`}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition: transition,
+      }}
+    >
+      {/* ヘッダー部分 */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <TaskCellViewer 
+            item={item} 
+            onUpdateTask={onUpdateTask} 
+            allTasks={allTasks} 
+            onDeleteTask={onDeleteTask}
+          >
+            <h3 className="font-medium text-base leading-tight text-foreground hover:text-primary cursor-pointer transition-colors truncate">
+              {item.title}
+            </h3>
+          </TaskCellViewer>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <DragHandle id={item.id} />
+          <TaskCellViewer 
+            item={item} 
+            onUpdateTask={onUpdateTask} 
+            allTasks={allTasks} 
+            onDeleteTask={onDeleteTask}
+          >
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <IconDotsVertical className="h-4 w-4" />
+            </Button>
+          </TaskCellViewer>
+        </div>
+      </div>
+
+      {/* ステータスと難易度 */}
+      <div className="flex flex-wrap items-center gap-2">
+        <EditableCell
+          value={item.status}
+          onSave={(newValue) => onUpdateTask(item.id, { status: newValue })}
+          type="select"
+          options={["未着手", "挑戦中", "解答確認中", "AC", "WA"]}
+          className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+            statusColors[item.status as keyof typeof statusColors] || "bg-gray-100 text-gray-600"
+          }`}
+        />
+        <Badge 
+          variant="outline" 
+          className={`px-2 py-1 text-xs ${
+            difficultyColors[item.difficulty as keyof typeof difficultyColors] || "bg-gray-100 text-gray-600"
+          }`}
+        >
+          <IconBrain className="mr-1 h-3 w-3" />
+          {item.difficulty}
+        </Badge>
+        <Badge 
+          variant="outline" 
+          className={`px-2 py-1 text-xs ${
+            platformColors[item.platform as keyof typeof platformColors] || "bg-gray-100 text-gray-600"
+          }`}
+        >
+          <IconCode className="mr-1 h-3 w-3" />
+          {item.platform}
+        </Badge>
+      </div>
+
+      {/* 説明文 */}
+      {item.description && (
+        <p className="text-sm text-muted-foreground overflow-hidden text-ellipsis" style={{
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+        }}>
+          {item.description}
+        </p>
+      )}
+
+      {/* 目標日 */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <IconCalendar className="h-4 w-4" />
+        <span>{formatDate(item.dueDate)}</span>
+      </div>
+
+      {/* 問題URL */}
+      {item.problemUrl && (
+        <div className="pt-2 border-t">
+          <a 
+            href={item.problemUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-sm text-primary hover:underline flex items-center gap-1"
+          >
+            <IconTarget className="h-3 w-3" />
+            問題を開く
+          </a>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ContestCalendar() {
+  const [currentDate, setCurrentDate] = React.useState(new Date())
+  const [contests] = React.useState(generateABCContests())
+  const [viewMode, setViewMode] = React.useState<'calendar' | 'list'>('calendar')
+  const [selectedContest, setSelectedContest] = React.useState<any>(null)
+  const isMobile = useIsMobile()
+  
+  // カレンダーの表示月を取得
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
+  
+  // 月の最初と最後の日付を取得
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const startingDayOfWeek = firstDay.getDay()
+  
+  // カレンダーのグリッドを生成
+  const calendarDays = []
+  
+  // 前月の末尾日付
+  for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+    const day = new Date(firstDay)
+    day.setDate(day.getDate() - i - 1)
+    calendarDays.push({ date: day, isCurrentMonth: false })
+  }
+  
+  // 当月の日付
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    calendarDays.push({ date: new Date(year, month, day), isCurrentMonth: true })
+  }
+  
+  // 次月の最初の日付（6週間表示のため）
+  const remainingDays = 42 - calendarDays.length
+  for (let day = 1; day <= remainingDays; day++) {
+    calendarDays.push({ date: new Date(year, month + 1, day), isCurrentMonth: false })
+  }
+  
+  // 指定日のコンテストを取得
+  const getContestsForDate = (date: Date) => {
+    return contests.filter(contest => {
+      const contestDate = new Date(contest.startTime)
+      return contestDate.toDateString() === date.toDateString()
+    })
+  }
+  
+  // 月を変更
+  const changeMonth = (direction: 'prev' | 'next') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev)
+      newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1))
+      return newDate
+    })
+  }
+  
+  const today = new Date()
+  
+  // モバイル用リスト表示
+  const renderMobileList = () => {
+    const sortedContests = contests
+      .filter(contest => {
+        const contestDate = new Date(contest.startTime)
+        return contestDate.getMonth() === month && contestDate.getFullYear() === year
+      })
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
+    
+    return (
+      <div className="space-y-3">
+        {sortedContests.map((contest) => (
+          <div key={contest.id} className="bg-card border rounded-lg p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <h5 className="font-medium text-base">{contest.title}</h5>
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <IconCalendar className="h-4 w-4" />
+                    {contest.startTime.toLocaleDateString('ja-JP', { 
+                      month: 'long', 
+                      day: 'numeric',
+                      weekday: 'short'
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <IconClock className="h-4 w-4" />
+                    {contest.startTime.toLocaleTimeString('ja-JP', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })} - {contest.endTime.toLocaleTimeString('ja-JP', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs ${
+                    contest.status === 'finished' ? 'bg-gray-50 text-gray-600' : 'bg-orange-50 text-orange-600'
+                  }`}
+                >
+                  {contest.status === 'finished' ? '終了' : '開催予定'}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => window.open(contest.url, '_blank')}
+                >
+                  詳細
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {sortedContests.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            <IconTrophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>今月はコンテストがありません</p>
+          </div>
+        )}
+      </div>
+    )
+  }
+  
+  return (
+    <div className="space-y-4">
+      {/* カレンダーヘッダー */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-lg sm:text-xl font-semibold">
+          {currentDate.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' })}
+        </h3>
+        <div className="flex items-center justify-between sm:justify-end gap-2">
+          {/* 表示モード切替（モバイルのみ） */}
+          {isMobile && (
+            <div className="flex rounded-md border">
+              <Button
+                variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('calendar')}
+                className="text-xs px-2 rounded-r-none"
+              >
+                カレンダー
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="text-xs px-2 rounded-l-none"
+              >
+                リスト
+              </Button>
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => changeMonth('prev')}
+              className="h-8 w-8 p-0"
+            >
+              <IconChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentDate(new Date())}
+              className="hidden sm:flex text-xs px-3"
+            >
+              今月
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => changeMonth('next')}
+              className="h-8 w-8 p-0"
+            >
+              <IconChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+      
+      {/* カレンダー表示またはリスト表示 */}
+      {isMobile && viewMode === 'list' ? (
+        renderMobileList()
+      ) : (
+        <>
+          {/* 曜日ヘッダー */}
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
+            {['日', '月', '火', '水', '木', '金', '土'].map((day, index) => (
+              <div 
+                key={day} 
+                className={`text-center text-xs sm:text-sm font-medium py-2 ${
+                  index === 0 ? 'text-red-500' : index === 6 ? 'text-blue-500' : 'text-muted-foreground'
+                }`}
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+          
+          {/* カレンダーグリッド */}
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
+            {calendarDays.map((calendarDay, index) => {
+              const dayContests = getContestsForDate(calendarDay.date)
+              const isToday = calendarDay.date.toDateString() === today.toDateString()
+              const dayOfWeek = calendarDay.date.getDay()
+              
+              return (
+                <div
+                  key={index}
+                  className={`
+                    min-h-[60px] sm:min-h-[80px] p-1 sm:p-2 border rounded-md transition-colors
+                    ${calendarDay.isCurrentMonth ? 'bg-card' : 'bg-muted/30'}
+                    ${isToday ? 'ring-2 ring-primary' : ''}
+                    ${dayContests.length > 0 ? 'hover:bg-muted/50 cursor-pointer' : ''}
+                  `}
+                >
+                  <div className={`
+                    text-xs sm:text-sm font-medium mb-1
+                    ${!calendarDay.isCurrentMonth ? 'text-muted-foreground' : 
+                      dayOfWeek === 0 ? 'text-red-500' : 
+                      dayOfWeek === 6 ? 'text-blue-500' : 'text-foreground'}
+                    ${isToday ? 'font-bold' : ''}
+                  `}>
+                    {calendarDay.date.getDate()}
+                  </div>
+                  
+                  {/* コンテスト表示 */}
+                  <div className="space-y-1">
+                    {dayContests.slice(0, 2).map((contest) => (
+                      <div
+                        key={contest.id}
+                        className={`
+                          text-xs px-1 py-0.5 rounded text-white truncate cursor-pointer hover:opacity-80 transition-opacity
+                          ${contest.status === 'finished' ? 'bg-gray-500' : 'bg-orange-500'}
+                        `}
+                        title={contest.title}
+                        onClick={() => setSelectedContest(contest)}
+                      >
+                        <div className="font-medium">ABC {contest.id.replace('abc', '')}</div>
+                        <div className="text-[10px] opacity-90">
+                          {contest.startTime.toLocaleTimeString('ja-JP', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                    {dayContests.length > 2 && (
+                      <div className="text-xs text-muted-foreground">
+                        +{dayContests.length - 2}件
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+      
+      {/* 今後のコンテスト一覧（リスト表示以外） */}
+      {(!isMobile || viewMode === 'calendar') && (
+        <div className="mt-6">
+          <h4 className="text-base sm:text-lg font-medium mb-3">今後のコンテスト</h4>
+          <div className="space-y-2">
+            {contests
+              .filter(contest => contest.status === 'upcoming')
+              .slice(0, 3)
+              .map((contest) => (
+                <div key={contest.id} className="bg-card border rounded-lg p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex-1">
+                      <h5 className="font-medium text-sm sm:text-base">{contest.title}</h5>
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-xs sm:text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <IconCalendar className="h-3 w-3" />
+                          {contest.startTime.toLocaleDateString('ja-JP')}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <IconClock className="h-3 w-3" />
+                          {contest.startTime.toLocaleTimeString('ja-JP', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })} - {contest.endTime.toLocaleTimeString('ja-JP', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-orange-600 bg-orange-50">
+                        {contest.platform}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => window.open(contest.url, '_blank')}
+                      >
+                        参加
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+      
+      {/* コンテスト詳細ダイアログ */}
+      <Dialog open={!!selectedContest} onOpenChange={() => setSelectedContest(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedContest?.title}</DialogTitle>
+            <DialogDescription>
+              AtCoder Beginner Contest の詳細情報
+            </DialogDescription>
+          </DialogHeader>
+          {selectedContest && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">開催日</span>
+                  <p className="font-medium">
+                    {selectedContest.startTime.toLocaleDateString('ja-JP', {
+                      year: 'numeric',
+                      month: 'long', 
+                      day: 'numeric',
+                      weekday: 'long'
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">時間</span>
+                  <p className="font-medium">
+                    {selectedContest.startTime.toLocaleTimeString('ja-JP', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })} - {selectedContest.endTime.toLocaleTimeString('ja-JP', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">難易度</span>
+                  <p className="font-medium">{selectedContest.difficulty}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">予想参加者</span>
+                  <p className="font-medium">{selectedContest.participants?.toLocaleString()}人</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <Button 
+                  onClick={() => window.open(selectedContest.url, '_blank')}
+                  className="w-full"
+                >
+                  <IconTarget className="mr-2 h-4 w-4" />
+                  コンテストページを開く
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setSelectedContest(null)}
+                  className="w-full"
+                >
+                  閉じる
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
 
 function TaskCellViewer({ item, onUpdateTask, allTasks, children, onDeleteTask }: { 
   item: z.infer<typeof schema>
@@ -1441,7 +1951,7 @@ function TaskCellViewer({ item, onUpdateTask, allTasks, children, onDeleteTask }
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 pt-4">
-              <Button type="submit" className="flex-1">
+              <Button type="submit" className="flex-1 h-10 sm:h-9">
                 保存
               </Button>
               {onDeleteTask && (
@@ -1449,7 +1959,7 @@ function TaskCellViewer({ item, onUpdateTask, allTasks, children, onDeleteTask }
                   type="button" 
                   variant="destructive" 
                   onClick={handleDelete}
-                  className="flex-1"
+                  className="flex-1 h-10 sm:h-9"
                 >
                   <IconTrash className="mr-2 h-4 w-4" />
                   削除
@@ -1459,7 +1969,7 @@ function TaskCellViewer({ item, onUpdateTask, allTasks, children, onDeleteTask }
                 type="button" 
                 variant="outline" 
                 onClick={() => setIsOpen(false)}
-                className="flex-1"
+                className="flex-1 h-10 sm:h-9"
               >
                 キャンセル
               </Button>

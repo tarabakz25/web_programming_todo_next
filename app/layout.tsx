@@ -22,6 +22,12 @@ const orbitron = Orbitron({
 export const metadata: Metadata = {
   title: "Competition Learning Platform",
   description: "Competition Learning Platform",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({
