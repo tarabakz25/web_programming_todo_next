@@ -26,11 +26,9 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
-  IconCircleCheckFilled,
   IconDotsVertical,
   IconGripVertical,
   IconLayoutColumns,
-  IconLoader,
   IconPlus,
   IconClock,
   IconCalendar,
@@ -91,7 +89,6 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -630,32 +627,6 @@ export function DataTable({
     })
   }, [setStoredData])
 
-  // タスク操作関数
-  const handleEditTask = React.useCallback((task: z.infer<typeof schema>) => {
-    // 簡易編集：タイトルのみ編集可能
-    const newTitle = prompt('タスクのタイトルを編集してください', task.title)
-    if (newTitle && newTitle !== task.title) {
-      handleUpdateTask(task.id, { title: newTitle })
-      toast.success('タスクを更新しました')
-    }
-  }, [handleUpdateTask])
-
-  const handleDuplicateTask = React.useCallback((task: z.infer<typeof schema>) => {
-    const newTask: z.infer<typeof schema> = {
-      ...task,
-      id: Date.now(),
-      title: `${task.title} (コピー)`,
-      status: '未着手',
-      completionDate: undefined
-    }
-    setData((prevData) => {
-      const newData = [...prevData, newTask]
-      setStoredData(newData)
-      return newData
-    })
-    toast.success('タスクを複製しました')
-  }, [setStoredData])
-
   const handleDeleteTask = React.useCallback((id: number) => {
     setTaskToDelete(id)
     setIsDeleteDialogOpen(true)
@@ -674,15 +645,6 @@ export function DataTable({
     }
   }, [taskToDelete, setStoredData])
 
-  const handleSolutionNotes = React.useCallback((task: z.infer<typeof schema>) => {
-    const currentNotes = task.solutionNotes || ''
-    const newNotes = prompt('解法メモを入力してください', currentNotes)
-    if (newNotes !== null) {
-      handleUpdateTask(task.id, { solutionNotes: newNotes })
-      toast.success('解法メモを保存しました')
-    }
-  }, [handleUpdateTask])
-
   const columns: ColumnDef<z.infer<typeof schema>>[] = React.useMemo(
     () => [
       {
@@ -699,7 +661,7 @@ export function DataTable({
                 table.getIsAllPageRowsSelected() ||
                 (table.getIsSomePageRowsSelected() && "indeterminate")
               }
-              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+              onCheckedChange={(value: boolean | "indeterminate") => table.toggleAllPageRowsSelected(!!value)}
               aria-label="Select all"
             />
           </div>
@@ -708,7 +670,7 @@ export function DataTable({
           <div className="flex items-center justify-center">
             <Checkbox
               checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              onCheckedChange={(value: boolean | "indeterminate") => row.toggleSelected(!!value)}
               aria-label="Select row"
             />
           </div>
@@ -839,7 +801,7 @@ export function DataTable({
         ),
       },
     ],
-    [handleUpdateTask]
+    [handleUpdateTask, data, handleDeleteTask]
   )
 
   const table = useReactTable({
@@ -1369,7 +1331,17 @@ function ContestCalendar() {
   const [currentDate, setCurrentDate] = React.useState(new Date())
   const [contests] = React.useState(generateABCContests())
   const [viewMode, setViewMode] = React.useState<'calendar' | 'list'>('calendar')
-  const [selectedContest, setSelectedContest] = React.useState<any>(null)
+  const [selectedContest, setSelectedContest] = React.useState<{
+    id: string
+    title: string
+    startTime: Date
+    endTime: Date
+    platform: string
+    difficulty: string
+    url: string
+    status: string
+    participants: number
+  } | null>(null)
   const isMobile = useIsMobile()
   
   // カレンダーの表示月を取得
