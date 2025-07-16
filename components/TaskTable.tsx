@@ -978,7 +978,7 @@ function TaskCellViewer({ item, onUpdateTask }: {
     toast.success("タスクを更新しました")
   }
 
-  const handleInputChange = (field: keyof z.infer<typeof schema>, value: any) => {
+  const handleInputChange = (field: keyof z.infer<typeof schema>, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
