@@ -8,7 +8,7 @@ export default function TaskManager() {
     setTasks([...tasks, task]);
   }
 
-  function toggleTask(id: string) {
+  function toggleTask(id: number) {
     setTasks(tasks.map(task => 
       task.id === id 
       ? {
@@ -22,4 +22,24 @@ export default function TaskManager() {
       : task
     ))
   }
+
+  function updateTaskStatus(id: number, newStatus: string) {
+    setTasks(tasks.map(task => 
+      task.id === id 
+      ? {
+        ...task,
+        status: newStatus,
+        // ACステータスに変更された場合、completionDateを設定
+        completionDate: newStatus === 'AC' ? new Date().toISOString() : task.completionDate
+      }
+      : task
+    ))
+  }
+
+  return {
+    tasks,
+    addTask,
+    toggleTask,
+    updateTaskStatus
+  };
 }

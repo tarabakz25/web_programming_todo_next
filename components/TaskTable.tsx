@@ -125,6 +125,115 @@ import {
 } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 
+// インライン編集コンポーネント
+function EditableCell({ 
+  value, 
+  onSave, 
+  type = "text",
+  options = [],
+  className = ""
+}: {
+  value: string
+  onSave: (newValue: string) => void
+  type?: "text" | "select" | "date"
+  options?: string[]
+  className?: string
+}) {
+  const [isEditing, setIsEditing] = React.useState(false)
+  const [editValue, setEditValue] = React.useState(value)
+
+  const handleSave = () => {
+    if (editValue !== value) {
+      onSave(editValue)
+      toast.success("保存しました")
+    }
+    setIsEditing(false)
+  }
+
+  const handleCancel = () => {
+    setEditValue(value)
+    setIsEditing(false)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave()
+    } else if (e.key === 'Escape') {
+      handleCancel()
+    }
+  }
+
+  // セレクトタイプの場合は直接ドロップダウンメニューを表示
+  if (type === "select") {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <div 
+            className={`cursor-pointer hover:bg-muted/50 rounded px-2 py-1 transition-colors ${className}`}
+            role="button"
+            tabIndex={0}
+          >
+            {value || "未設定"}
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {options.map((option) => (
+            <DropdownMenuItem 
+              key={option} 
+              onClick={() => {
+                if (option !== value) {
+                  onSave(option)
+                  toast.success("保存しました")
+                }
+              }}
+            >
+              {option}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
+
+  if (!isEditing) {
+    return (
+      <div 
+        className={`cursor-pointer hover:bg-muted/50 rounded px-2 py-1 transition-colors ${className}`}
+        onClick={() => setIsEditing(true)}
+        role="button"
+        tabIndex={0}
+      >
+        {value || "未設定"}
+      </div>
+    )
+  }
+
+  if (type === "date") {
+    return (
+      <Input
+        type="date"
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onBlur={handleSave}
+        onKeyDown={handleKeyDown}
+        className="h-8 w-full"
+        autoFocus
+      />
+    )
+  }
+
+  return (
+    <Input
+      value={editValue}
+      onChange={(e) => setEditValue(e.target.value)}
+      onBlur={handleSave}
+      onKeyDown={handleKeyDown}
+      className="h-8 w-full"
+      autoFocus
+    />
+  )
+}
+
 export const schema = z.object({
   id: z.number(),
   title: z.string(),
@@ -136,6 +245,7 @@ export const schema = z.object({
   estimatedTime: z.string(),
   tags: z.array(z.string()),
   problemUrl: z.string(),
+  completionDate: z.string().optional(),
 })
 
 // Create a separate component for the drag handle
@@ -158,186 +268,7 @@ function DragHandle({ id }: { id: number }) {
   )
 }
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
-  {
-    id: "drag",
-    header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original.id} />,
-  },
-  {
-    id: "select",
-    header: ({ table }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "title",
-    header: "問題名",
-    cell: ({ row }) => {
-      return <TaskCellViewer item={row.original} />
-    },
-    enableHiding: false,
-  },
-  {
-    accessorKey: "status",
-    header: "ステータス",
-    cell: ({ row }) => {
-      const statusColors = {
-        "未着手": "bg-gray-100 text-gray-600",
-        "挑戦中": "bg-blue-100 text-blue-600",
-        "解答確認中": "bg-yellow-100 text-yellow-600",
-        "AC": "bg-green-100 text-green-600",
-        "WA": "bg-red-100 text-red-600",
-      }
-      
-      return (
-        <Badge 
-          variant="outline" 
-          className={`px-2 py-1 ${statusColors[row.original.status as keyof typeof statusColors] || "bg-gray-100 text-gray-600"}`}
-        >
-          {row.original.status === "AC" ? (
-            <IconCircleCheckFilled className="mr-1 size-3 fill-green-500" />
-          ) : row.original.status === "挑戦中" ? (
-            <IconLoader className="mr-1 size-3" />
-          ) : row.original.status === "WA" ? (
-            <IconTarget className="mr-1 size-3" />
-          ) : (
-            <IconClock className="mr-1 size-3" />
-          )}
-          {row.original.status}
-        </Badge>
-      )
-    },
-  },
-  {
-    accessorKey: "difficulty",
-    header: "難易度",
-    cell: ({ row }) => {
-      const difficultyColors = {
-        "Easy": "bg-green-100 text-green-600",
-        "Medium": "bg-yellow-100 text-yellow-600",
-        "Hard": "bg-red-100 text-red-600",
-        "★1": "bg-gray-100 text-gray-600",
-        "★2": "bg-blue-100 text-blue-600",
-        "★3": "bg-yellow-100 text-yellow-600",
-        "★4": "bg-orange-100 text-orange-600",
-        "★5": "bg-red-100 text-red-600",
-      }
-      
-      return (
-        <Badge 
-          variant="outline" 
-          className={`px-2 py-1 ${difficultyColors[row.original.difficulty as keyof typeof difficultyColors] || "bg-gray-100 text-gray-600"}`}
-        >
-          <IconBrain className="mr-1 size-3" />
-          {row.original.difficulty}
-        </Badge>
-      )
-    },
-  },
-  {
-    accessorKey: "platform",
-    header: "プラットフォーム",
-    cell: ({ row }) => {
-      const platformColors = {
-        "AtCoder": "bg-orange-100 text-orange-600",
-        "Codeforces": "bg-blue-100 text-blue-600",
-        "LeetCode": "bg-yellow-100 text-yellow-600",
-        "yukicoder": "bg-purple-100 text-purple-600",
-        "AOJ": "bg-green-100 text-green-600",
-      }
-      
-      return (
-        <Badge 
-          variant="outline" 
-          className={`px-2 py-1 ${platformColors[row.original.platform as keyof typeof platformColors] || "bg-gray-100 text-gray-600"}`}
-        >
-          <IconCode className="mr-1 size-3" />
-          {row.original.platform}
-        </Badge>
-      )
-    },
-  },
-  {
-    accessorKey: "dueDate",
-    header: () => <div className="w-full text-center">目標日</div>,
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center gap-2">
-        <IconCalendar className="size-4 text-muted-foreground" />
-        <span className="text-sm">{row.original.dueDate}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "estimatedTime",
-    header: () => <div className="w-full text-right">予想時間</div>,
-    cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            loading: `${row.original.title}を保存中`,
-            success: "保存完了",
-            error: "エラーが発生しました",
-          })
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-time`} className="sr-only">
-          予想時間
-        </Label>
-        <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-          defaultValue={row.original.estimatedTime}
-          id={`${row.original.id}-time`}
-        />
-      </form>
-    ),
-  },
-  {
-    id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-            size="icon"
-          >
-            <IconDotsVertical />
-            <span className="sr-only">メニューを開く</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>編集</DropdownMenuItem>
-          <DropdownMenuItem>複製</DropdownMenuItem>
-          <DropdownMenuItem>解法メモ</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">削除</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
-  },
-]
+
 
 function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
@@ -380,9 +311,10 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
       difficulty: formData.get("difficulty") as string,
       platform: formData.get("platform") as string,
       dueDate: formData.get("dueDate") as string,
-      estimatedTime: formData.get("estimatedTime") as string,
+      estimatedTime: "",
       tags: [],
       problemUrl: formData.get("problemUrl") as string,
+      completionDate: formData.get("status") === "AC" ? new Date().toISOString() : undefined,
     }
 
     onAddTask(newTask)
@@ -479,18 +411,6 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
             type="date"
           />
         </div>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <Label htmlFor="estimatedTime">予想時間（分）</Label>
-        <Input 
-          id="estimatedTime" 
-          name="estimatedTime" 
-          type="number" 
-          placeholder="30"
-          min="0"
-          step="5"
-        />
       </div>
 
       <div className="flex gap-2 pt-4">
@@ -590,6 +510,183 @@ export function DataTable({
     [data]
   )
 
+  const handleAddTask = (newTask: z.infer<typeof schema>) => {
+    setData((prevData) => {
+      const newData = [...prevData, newTask]
+      setStoredData(newData)
+      return newData
+    })
+  }
+
+  const handleUpdateTask = (id: number, updatedTask: Partial<z.infer<typeof schema>>) => {
+    setData((prevData) => {
+      const newData = prevData.map(task => 
+        task.id === id ? { ...task, ...updatedTask } : task
+      )
+      setStoredData(newData)
+      return newData
+    })
+  }
+
+  const columns: ColumnDef<z.infer<typeof schema>>[] = React.useMemo(
+    () => [
+      {
+        id: "drag",
+        header: () => null,
+        cell: ({ row }) => <DragHandle id={row.original.id} />,
+      },
+      {
+        id: "select",
+        header: ({ table }) => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={
+                table.getIsAllPageRowsSelected() ||
+                (table.getIsSomePageRowsSelected() && "indeterminate")
+              }
+              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+              aria-label="Select all"
+            />
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Select row"
+            />
+          </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "title",
+        header: "問題名",
+        cell: ({ row }) => {
+          return <TaskCellViewer item={row.original} onUpdateTask={handleUpdateTask} />
+        },
+        enableHiding: false,
+      },
+      {
+        accessorKey: "status",
+        header: "ステータス",
+        cell: ({ row }) => {
+          const statusColors = {
+            "未着手": "bg-gray-100 text-gray-600",
+            "挑戦中": "bg-blue-100 text-blue-600",
+            "解答確認中": "bg-yellow-100 text-yellow-600",
+            "AC": "bg-green-100 text-green-600",
+            "WA": "bg-red-100 text-red-600",
+          }
+          
+          const getStatusIcon = (status: string) => {
+            if (status === "AC") return <IconCircleCheckFilled className="mr-1 size-3 fill-green-500" />
+            if (status === "挑戦中") return <IconLoader className="mr-1 size-3" />
+            if (status === "WA") return <IconTarget className="mr-1 size-3" />
+            return <IconClock className="mr-1 size-3" />
+          }
+          
+          return (
+            <EditableCell
+              value={row.original.status}
+              onSave={(newValue) => handleUpdateTask(row.original.id, { status: newValue })}
+              type="select"
+              options={["未着手", "挑戦中", "解答確認中", "AC", "WA"]}
+              className={`inline-flex items-center px-2 py-1 ${statusColors[row.original.status as keyof typeof statusColors] || "bg-gray-100 text-gray-600"}`}
+            />
+          )
+        },
+      },
+      {
+        accessorKey: "difficulty",
+        header: "難易度",
+        cell: ({ row }) => {
+          const difficultyColors = {
+            "Easy": "bg-green-100 text-green-600",
+            "Medium": "bg-yellow-100 text-yellow-600",
+            "Hard": "bg-red-100 text-red-600",
+            "★1": "bg-gray-100 text-gray-600",
+            "★2": "bg-blue-100 text-blue-600",
+            "★3": "bg-yellow-100 text-yellow-600",
+            "★4": "bg-orange-100 text-orange-600",
+            "★5": "bg-red-100 text-red-600",
+          }
+          
+          return (
+            <Badge 
+              variant="outline" 
+              className={`px-2 py-1 ${difficultyColors[row.original.difficulty as keyof typeof difficultyColors] || "bg-gray-100 text-gray-600"}`}
+            >
+              <IconBrain className="mr-1 size-3" />
+              {row.original.difficulty}
+            </Badge>
+          )
+        },
+      },
+      {
+        accessorKey: "platform",
+        header: "プラットフォーム",
+        cell: ({ row }) => {
+          const platformColors = {
+            "AtCoder": "bg-orange-100 text-orange-600",
+            "Codeforces": "bg-blue-100 text-blue-600",
+            "LeetCode": "bg-yellow-100 text-yellow-600",
+            "yukicoder": "bg-purple-100 text-purple-600",
+            "AOJ": "bg-green-100 text-green-600",
+          }
+          
+          return (
+            <Badge 
+              variant="outline" 
+              className={`px-2 py-1 ${platformColors[row.original.platform as keyof typeof platformColors] || "bg-gray-100 text-gray-600"}`}
+            >
+              <IconCode className="mr-1 size-3" />
+              {row.original.platform}
+            </Badge>
+          )
+        },
+      },
+      {
+        accessorKey: "dueDate",
+        header: () => <div className="w-full text-center">目標日</div>,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center gap-2">
+            <IconCalendar className="size-4 text-muted-foreground" />
+            <span className="text-sm">{row.original.dueDate}</span>
+          </div>
+        ),
+      },
+
+      {
+        id: "actions",
+        cell: () => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                size="icon"
+              >
+                <IconDotsVertical />
+                <span className="sr-only">メニューを開く</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-32">
+              <DropdownMenuItem>編集</DropdownMenuItem>
+              <DropdownMenuItem>複製</DropdownMenuItem>
+              <DropdownMenuItem>解法メモ</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive">削除</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+      },
+    ],
+    [handleUpdateTask]
+  )
+
   const table = useReactTable({
     data,
     columns,
@@ -626,14 +723,6 @@ export function DataTable({
         return newData
       })
     }
-  }
-
-  const handleAddTask = (newTask: z.infer<typeof schema>) => {
-    setData((prevData) => {
-      const newData = [...prevData, newTask]
-      setStoredData(newData)
-      return newData
-    })
   }
 
   return (
@@ -885,11 +974,27 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-function TaskCellViewer({ item }: { item: z.infer<typeof schema> }) {
+function TaskCellViewer({ item, onUpdateTask }: { 
+  item: z.infer<typeof schema>
+  onUpdateTask: (id: number, updatedTask: Partial<z.infer<typeof schema>>) => void 
+}) {
   const isMobile = useIsMobile()
+  const [isOpen, setIsOpen] = React.useState(false)
+  const [formData, setFormData] = React.useState(item)
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    onUpdateTask(item.id, formData)
+    setIsOpen(false)
+    toast.success("タスクを更新しました")
+  }
+
+  const handleInputChange = (field: keyof z.infer<typeof schema>, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
 
   return (
-    <Drawer direction={isMobile ? "bottom" : "right"}>
+    <Drawer direction={isMobile ? "bottom" : "right"} open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
         <Button variant="link" className="text-foreground w-fit px-0 text-left">
           {item.title}
@@ -959,26 +1064,42 @@ function TaskCellViewer({ item }: { item: z.infer<typeof schema> }) {
               <Separator />
             </>
           )}
-          <form className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
               <Label htmlFor="title">問題名</Label>
-              <Input id="title" defaultValue={item.title} />
+              <Input 
+                id="title" 
+                value={formData.title}
+                onChange={(e) => handleInputChange('title', e.target.value)}
+              />
             </div>
             
             <div className="flex flex-col gap-3">
               <Label htmlFor="problemUrl">問題URL</Label>
-              <Input id="problemUrl" defaultValue={item.problemUrl} />
+              <Input 
+                id="problemUrl" 
+                value={formData.problemUrl}
+                onChange={(e) => handleInputChange('problemUrl', e.target.value)}
+              />
             </div>
             
             <div className="flex flex-col gap-3">
               <Label htmlFor="description">解法メモ</Label>
-              <Textarea id="description" defaultValue={item.description} rows={3} />
+              <Textarea 
+                id="description" 
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                rows={3} 
+              />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="status">ステータス</Label>
-                <Select defaultValue={item.status}>
+                <Select 
+                  value={formData.status}
+                  onValueChange={(value) => handleInputChange('status', value)}
+                >
                   <SelectTrigger id="status" className="w-full">
                     <SelectValue placeholder="ステータスを選択" />
                   </SelectTrigger>
@@ -993,7 +1114,10 @@ function TaskCellViewer({ item }: { item: z.infer<typeof schema> }) {
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="platform">プラットフォーム</Label>
-                <Select defaultValue={item.platform}>
+                <Select 
+                  value={formData.platform}
+                  onValueChange={(value) => handleInputChange('platform', value)}
+                >
                   <SelectTrigger id="platform" className="w-full">
                     <SelectValue placeholder="プラットフォームを選択" />
                   </SelectTrigger>
@@ -1010,7 +1134,10 @@ function TaskCellViewer({ item }: { item: z.infer<typeof schema> }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="difficulty">難易度</Label>
-                <Select defaultValue={item.difficulty}>
+                <Select 
+                  value={formData.difficulty}
+                  onValueChange={(value) => handleInputChange('difficulty', value)}
+                >
                   <SelectTrigger id="difficulty" className="w-full">
                     <SelectValue placeholder="難易度を選択" />
                   </SelectTrigger>
@@ -1028,21 +1155,29 @@ function TaskCellViewer({ item }: { item: z.infer<typeof schema> }) {
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="dueDate">目標日</Label>
-                <Input id="dueDate" type="date" defaultValue={item.dueDate} />
+                <Input 
+                  id="dueDate" 
+                  type="date" 
+                  value={formData.dueDate}
+                  onChange={(e) => handleInputChange('dueDate', e.target.value)}
+                />
               </div>
             </div>
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="estimatedTime">予想時間</Label>
-              <Input id="estimatedTime" defaultValue={item.estimatedTime} />
+            <div className="flex gap-2 pt-4">
+              <Button type="submit" className="flex-1">
+                保存
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsOpen(false)}
+                className="flex-1"
+              >
+                キャンセル
+              </Button>
             </div>
           </form>
         </div>
-        <DrawerFooter>
-          <Button>保存</Button>
-          <DrawerClose asChild>
-            <Button variant="outline">閉じる</Button>
-          </DrawerClose>
-        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )

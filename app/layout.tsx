@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 const orbitron = Orbitron({
+  variable: "--font-orbitron",
   weight: "400",
   subsets: ["latin"],
 });
@@ -30,8 +31,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      
       <body
-        className={`${orbitron.className} ${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.className} ${geistSans.variable} ${geistMono.variable} ${orbitron.variable} antialiased`}
       >
         <ThemeProvider
           attribute="class"
