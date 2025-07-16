@@ -13,7 +13,7 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar"
 
-import { Calendar, Home, Inbox, Search, Settings, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 
 import { Category } from "@/types/task";
 import { useLocalStorage } from "@/hooks/useLocalStorage";

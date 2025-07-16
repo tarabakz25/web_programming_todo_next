@@ -32,11 +32,8 @@ import {
   IconLayoutColumns,
   IconLoader,
   IconPlus,
-  IconTrendingUp,
   IconClock,
   IconCalendar,
-  IconUser,
-  IconFlag,
   IconCode,
   IconTarget,
   IconBrain,
@@ -76,17 +73,14 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
@@ -518,7 +512,7 @@ export function DataTable({
     })
   }
 
-  const handleUpdateTask = (id: number, updatedTask: Partial<z.infer<typeof schema>>) => {
+  const handleUpdateTask = React.useCallback((id: number, updatedTask: Partial<z.infer<typeof schema>>) => {
     setData((prevData) => {
       const newData = prevData.map(task => 
         task.id === id ? { ...task, ...updatedTask } : task
@@ -526,7 +520,7 @@ export function DataTable({
       setStoredData(newData)
       return newData
     })
-  }
+  }, [setStoredData])
 
   const columns: ColumnDef<z.infer<typeof schema>>[] = React.useMemo(
     () => [
@@ -581,12 +575,7 @@ export function DataTable({
             "WA": "bg-red-100 text-red-600",
           }
           
-          const getStatusIcon = (status: string) => {
-            if (status === "AC") return <IconCircleCheckFilled className="mr-1 size-3 fill-green-500" />
-            if (status === "挑戦中") return <IconLoader className="mr-1 size-3" />
-            if (status === "WA") return <IconTarget className="mr-1 size-3" />
-            return <IconClock className="mr-1 size-3" />
-          }
+
           
           return (
             <EditableCell
