@@ -38,6 +38,7 @@ import {
   IconTarget,
   IconBrain,
   IconTrophy,
+  IconTrash,
 } from "@tabler/icons-react"
 import {
   ColumnDef,
@@ -315,6 +316,7 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>) => void }) {
   const isMobile = useIsMobile()
   const [open, setOpen] = React.useState(false)
+  const [dueDate, setDueDate] = React.useState<string>("")
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -327,7 +329,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
       status: formData.get("status") as string,
       difficulty: formData.get("difficulty") as string,
       platform: formData.get("platform") as string,
-      dueDate: formData.get("dueDate") as string,
+      dueDate: dueDate,
       estimatedTime: "",
       tags: [],
       problemUrl: formData.get("problemUrl") as string,
@@ -336,6 +338,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
 
     onAddTask(newTask)
     setOpen(false)
+    setDueDate("") // フォームリセット
     toast.success("問題が追加されました")
   }
 
@@ -422,10 +425,10 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
         
         <div className="flex flex-col gap-3">
           <Label htmlFor="dueDate">目標日</Label>
-          <Input 
-            id="dueDate" 
-            name="dueDate" 
-            type="date"
+          <DateTimePicker 
+            date={dueDate ? new Date(dueDate) : undefined}
+            onDateChange={(date) => setDueDate(date ? date.toISOString() : '')}
+            placeholder="目標日を選択"
           />
         </div>
       </div>
@@ -653,7 +656,7 @@ export function DataTable({
         accessorKey: "title",
         header: "問題名",
         cell: ({ row }) => {
-          return <TaskCellViewer item={row.original} onUpdateTask={handleUpdateTask} allTasks={data} />
+          return <TaskCellViewer item={row.original} onUpdateTask={handleUpdateTask} allTasks={data} onDeleteTask={handleDeleteTask} />
         },
         enableHiding: false,
       },
@@ -745,7 +748,7 @@ export function DataTable({
       {
         id: "actions",
         cell: ({ row }) => (
-          <TaskCellViewer item={row.original} onUpdateTask={handleUpdateTask} allTasks={data}>
+          <TaskCellViewer item={row.original} onUpdateTask={handleUpdateTask} allTasks={data} onDeleteTask={handleDeleteTask}>
             <Button
               variant="ghost"
               className="text-muted-foreground flex size-8"
@@ -1154,11 +1157,12 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-function TaskCellViewer({ item, onUpdateTask, allTasks, children }: { 
+function TaskCellViewer({ item, onUpdateTask, allTasks, children, onDeleteTask }: { 
   item: z.infer<typeof schema>
   onUpdateTask: (id: number, updatedTask: Partial<z.infer<typeof schema>>) => void 
   allTasks: z.infer<typeof schema>[]
   children?: React.ReactNode
+  onDeleteTask?: (id: number) => void
 }) {
   const isMobile = useIsMobile()
   const [isOpen, setIsOpen] = React.useState(false)
@@ -1178,6 +1182,13 @@ function TaskCellViewer({ item, onUpdateTask, allTasks, children }: {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  const handleDelete = () => {
+    if (onDeleteTask) {
+      onDeleteTask(item.id)
+      setIsOpen(false)
+    }
+  }
+
   return (
     <Drawer direction={isMobile ? "bottom" : "right"} open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
@@ -1187,7 +1198,7 @@ function TaskCellViewer({ item, onUpdateTask, allTasks, children }: {
           </Button>
         )}
       </DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent className="max-w-2xl mx-auto">
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.title}</DrawerTitle>
           <DrawerDescription>
@@ -1353,6 +1364,17 @@ function TaskCellViewer({ item, onUpdateTask, allTasks, children }: {
               <Button type="submit" className="flex-1">
                 保存
               </Button>
+              {onDeleteTask && (
+                <Button 
+                  type="button" 
+                  variant="destructive" 
+                  onClick={handleDelete}
+                  className="flex-1"
+                >
+                  <IconTrash className="mr-2 h-4 w-4" />
+                  削除
+                </Button>
+              )}
               <Button 
                 type="button" 
                 variant="outline" 

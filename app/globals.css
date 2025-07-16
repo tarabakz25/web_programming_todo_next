@@ -82,26 +82,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-@layer utilities {
-  /* レスポンシブユーティリティクラス */
-  .container {
-    @apply w-full mx-auto;
-  }
-
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* タッチデバイス対応 */
-  @media (hover: none) and (pointer: coarse) {
-    .hover\:bg-muted\/50:hover {
-      background-color: transparent;
-    }
-  }
-}
