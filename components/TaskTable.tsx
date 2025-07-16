@@ -316,32 +316,47 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>) => void }) {
   const isMobile = useIsMobile()
   const [open, setOpen] = React.useState(false)
-  const [dueDate, setDueDate] = React.useState<string>("")
-  const formRef = React.useRef<HTMLFormElement>(null)
+  
+  // フォームの全フィールドをReact stateで管理
+  const [formData, setFormData] = React.useState({
+    title: "",
+    description: "",
+    status: "未着手",
+    difficulty: "",
+    platform: "AtCoder",
+    dueDate: "",
+    problemUrl: "",
+  })
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
     
     const newTask = {
       id: Date.now(), // 簡易的なID生成
-      title: formData.get("title") as string,
-      description: formData.get("description") as string,
-      status: formData.get("status") as string,
-      difficulty: formData.get("difficulty") as string,
-      platform: formData.get("platform") as string,
-      dueDate: dueDate,
+      title: formData.title,
+      description: formData.description,
+      status: formData.status,
+      difficulty: formData.difficulty,
+      platform: formData.platform,
+      dueDate: formData.dueDate,
       estimatedTime: "",
       tags: [],
-      problemUrl: formData.get("problemUrl") as string,
-      completionDate: formData.get("status") === "AC" ? new Date().toISOString() : undefined,
+      problemUrl: formData.problemUrl,
+      completionDate: formData.status === "AC" ? new Date().toISOString() : undefined,
     }
 
     onAddTask(newTask)
     
-    // フォームと状態を完全にリセット
-    e.currentTarget.reset()
-    setDueDate("")
+    // フォーム状態を完全にリセット
+    setFormData({
+      title: "",
+      description: "",
+      status: "未着手",
+      difficulty: "",
+      platform: "AtCoder",
+      dueDate: "",
+      problemUrl: "",
+    })
     setOpen(false)
     
     toast.success("問題が追加されました")
@@ -352,18 +367,35 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
     setOpen(isOpen)
     if (!isOpen) {
       // ダイアログが閉じられた時にフォームをリセット
-      setDueDate("")
-      if (formRef.current) {
-        formRef.current.reset()
-      }
+      setFormData({
+        title: "",
+        description: "",
+        status: "未着手",
+        difficulty: "",
+        platform: "AtCoder",
+        dueDate: "",
+        problemUrl: "",
+      })
     }
   }
 
+  // フィールド更新用のヘルパー関数
+  const updateField = (field: keyof typeof formData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
   const TaskForm = () => (
-    <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-3">
         <Label htmlFor="title">問題名 *</Label>
-        <Input id="title" name="title" placeholder="問題名を入力してください" required />
+        <Input 
+          id="title" 
+          name="title" 
+          value={formData.title}
+          onChange={(e) => updateField('title', e.target.value)}
+          placeholder="問題名を入力してください" 
+          required 
+        />
       </div>
       
       <div className="flex flex-col gap-3">
@@ -372,6 +404,8 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
           id="problemUrl" 
           name="problemUrl" 
           type="url"
+          value={formData.problemUrl}
+          onChange={(e) => updateField('problemUrl', e.target.value)}
           placeholder="https://atcoder.jp/contests/abc123/tasks/abc123_a"
         />
       </div>
@@ -381,6 +415,8 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
         <Textarea 
           id="description" 
           name="description" 
+          value={formData.description}
+          onChange={(e) => updateField('description', e.target.value)}
           placeholder="アルゴリズムや解法のアイデアを記録"
           rows={3}
         />
@@ -389,7 +425,11 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-3">
           <Label htmlFor="status">ステータス</Label>
-          <Select name="status" defaultValue="未着手">
+          <Select 
+            name="status" 
+            value={formData.status}
+            onValueChange={(value) => updateField('status', value)}
+          >
             <SelectTrigger id="status">
               <SelectValue placeholder="ステータスを選択" />
             </SelectTrigger>
@@ -405,7 +445,11 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
         
         <div className="flex flex-col gap-3">
           <Label htmlFor="platform">プラットフォーム</Label>
-          <Select name="platform" defaultValue="AtCoder">
+          <Select 
+            name="platform" 
+            value={formData.platform}
+            onValueChange={(value) => updateField('platform', value)}
+          >
             <SelectTrigger id="platform">
               <SelectValue placeholder="プラットフォームを選択" />
             </SelectTrigger>
@@ -423,7 +467,11 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-3">
           <Label htmlFor="difficulty">難易度</Label>
-          <Select name="difficulty">
+          <Select 
+            name="difficulty"
+            value={formData.difficulty}
+            onValueChange={(value) => updateField('difficulty', value)}
+          >
             <SelectTrigger id="difficulty">
               <SelectValue placeholder="難易度を選択" />
             </SelectTrigger>
@@ -443,8 +491,8 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
         <div className="flex flex-col gap-3">
           <Label htmlFor="dueDate">目標日</Label>
           <DateTimePicker 
-            date={dueDate ? new Date(dueDate) : undefined}
-            onDateChange={(date) => setDueDate(date ? date.toISOString() : '')}
+            date={formData.dueDate ? new Date(formData.dueDate) : undefined}
+            onDateChange={(date) => updateField('dueDate', date ? date.toISOString() : '')}
             placeholder="目標日を選択"
           />
         </div>
