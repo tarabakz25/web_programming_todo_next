@@ -313,84 +313,101 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
   const isMobile = useIsMobile()
   const [open, setOpen] = React.useState(false)
   
-  // フォームの全フィールドをReact stateで管理
-  const [formData, setFormData] = React.useState({
-    title: "",
-    description: "",
-    status: "未着手",
-    difficulty: "",
-    platform: "AtCoder",
-    dueDate: "",
-    problemUrl: "",
-  })
+  // 各フィールドを個別にstateで管理
+  const [title, setTitle] = React.useState("")
+  const [description, setDescription] = React.useState("")
+  const [status, setStatus] = React.useState("未着手")
+  const [difficulty, setDifficulty] = React.useState("")
+  const [platform, setPlatform] = React.useState("AtCoder")
+  const [dueDate, setDueDate] = React.useState("")
+  const [problemUrl, setProblemUrl] = React.useState("")
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  // 安定したイベントハンドラー
+  const handleTitleChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value)
+  }, [])
+
+  const handleProblemUrlChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setProblemUrl(e.target.value)
+  }, [])
+
+  const handleDescriptionChange = React.useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(e.target.value)
+  }, [])
+
+  const handleStatusChange = React.useCallback((value: string) => {
+    setStatus(value)
+  }, [])
+
+  const handlePlatformChange = React.useCallback((value: string) => {
+    setPlatform(value)
+  }, [])
+
+  const handleDifficultyChange = React.useCallback((value: string) => {
+    setDifficulty(value)
+  }, [])
+
+  const handleDueDateChange = React.useCallback((date: Date | undefined) => {
+    setDueDate(date ? date.toISOString() : "")
+  }, [])
+
+  const resetForm = React.useCallback(() => {
+    setTitle("")
+    setDescription("")
+    setStatus("未着手")
+    setDifficulty("")
+    setPlatform("AtCoder")
+    setDueDate("")
+    setProblemUrl("")
+  }, [])
+
+  const handleSubmit = React.useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
     const newTask = {
-      id: Date.now(), // 簡易的なID生成
-      title: formData.title,
-      description: formData.description,
-      status: formData.status,
-      difficulty: formData.difficulty,
-      platform: formData.platform,
-      dueDate: formData.dueDate,
+      id: Date.now(),
+      title,
+      description,
+      status,
+      difficulty,
+      platform,
+      dueDate,
       estimatedTime: "",
       tags: [],
-      problemUrl: formData.problemUrl,
-      completionDate: formData.status === "AC" ? new Date().toISOString() : undefined,
+      problemUrl,
+      completionDate: status === "AC" ? new Date().toISOString() : undefined,
     }
 
     onAddTask(newTask)
-    
-    // フォーム状態を完全にリセット
-    setFormData({
-      title: "",
-      description: "",
-      status: "未着手",
-      difficulty: "",
-      platform: "AtCoder",
-      dueDate: "",
-      problemUrl: "",
-    })
+    resetForm()
     setOpen(false)
-    
     toast.success("問題が追加されました")
-  }
+  }, [title, description, status, difficulty, platform, dueDate, problemUrl, onAddTask, resetForm])
 
-  // ダイアログの開閉状態変更時の処理
-  const handleOpenChange = (isOpen: boolean) => {
+  const handleOpenChange = React.useCallback((isOpen: boolean) => {
     setOpen(isOpen)
     if (!isOpen) {
-      // ダイアログが閉じられた時にフォームをリセット
-      setFormData({
-        title: "",
-        description: "",
-        status: "未着手",
-        difficulty: "",
-        platform: "AtCoder",
-        dueDate: "",
-        problemUrl: "",
-      })
+      resetForm()
     }
-  }
+  }, [resetForm])
 
-  // フィールド更新用のヘルパー関数
-  const updateField = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+  const handleCancel = React.useCallback(() => {
+    handleOpenChange(false)
+  }, [handleOpenChange])
 
-  const TaskForm = () => (
+  // フォームJSXをuseMemoで安定化
+  const formContent = React.useMemo(() => (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-3">
         <Label htmlFor="title">問題名 *</Label>
         <Input 
           id="title" 
           name="title" 
-          value={formData.title}
-          onChange={(e) => updateField('title', e.target.value)}
+          value={title}
+          onChange={handleTitleChange}
           placeholder="問題名を入力してください" 
           required 
+          autoComplete="off"
         />
       </div>
       
@@ -400,9 +417,10 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
           id="problemUrl" 
           name="problemUrl" 
           type="url"
-          value={formData.problemUrl}
-          onChange={(e) => updateField('problemUrl', e.target.value)}
+          value={problemUrl}
+          onChange={handleProblemUrlChange}
           placeholder="https://atcoder.jp/contests/abc123/tasks/abc123_a"
+          autoComplete="off"
         />
       </div>
       
@@ -411,8 +429,8 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
         <Textarea 
           id="description" 
           name="description" 
-          value={formData.description}
-          onChange={(e) => updateField('description', e.target.value)}
+          value={description}
+          onChange={handleDescriptionChange}
           placeholder="アルゴリズムや解法のアイデアを記録"
           rows={3}
         />
@@ -423,8 +441,8 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
           <Label htmlFor="status">ステータス</Label>
           <Select 
             name="status" 
-            value={formData.status}
-            onValueChange={(value) => updateField('status', value)}
+            value={status}
+            onValueChange={handleStatusChange}
           >
             <SelectTrigger id="status">
               <SelectValue placeholder="ステータスを選択" />
@@ -443,8 +461,8 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
           <Label htmlFor="platform">プラットフォーム</Label>
           <Select 
             name="platform" 
-            value={formData.platform}
-            onValueChange={(value) => updateField('platform', value)}
+            value={platform}
+            onValueChange={handlePlatformChange}
           >
             <SelectTrigger id="platform">
               <SelectValue placeholder="プラットフォームを選択" />
@@ -465,8 +483,8 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
           <Label htmlFor="difficulty">難易度</Label>
           <Select 
             name="difficulty"
-            value={formData.difficulty}
-            onValueChange={(value) => updateField('difficulty', value)}
+            value={difficulty}
+            onValueChange={handleDifficultyChange}
           >
             <SelectTrigger id="difficulty">
               <SelectValue placeholder="難易度を選択" />
@@ -487,8 +505,8 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
         <div className="flex flex-col gap-3">
           <Label htmlFor="dueDate">目標日</Label>
           <DateTimePicker 
-            date={formData.dueDate ? new Date(formData.dueDate) : undefined}
-            onDateChange={(date) => updateField('dueDate', date ? date.toISOString() : '')}
+            date={dueDate ? new Date(dueDate) : undefined}
+            onDateChange={handleDueDateChange}
             placeholder="目標日を選択"
           />
         </div>
@@ -501,14 +519,19 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
         <Button 
           type="button" 
           variant="outline" 
-          onClick={() => handleOpenChange(false)}
+          onClick={handleCancel}
           className="flex-1 h-10 sm:h-9"
         >
           キャンセル
         </Button>
       </div>
     </form>
-  )
+  ), [
+    title, problemUrl, description, status, platform, difficulty, dueDate,
+    handleSubmit, handleTitleChange, handleProblemUrlChange, handleDescriptionChange,
+    handleStatusChange, handlePlatformChange, handleDifficultyChange, handleDueDateChange,
+    handleCancel
+  ])
 
   if (isMobile) {
     return (
@@ -527,7 +550,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
             </DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-4">
-            <TaskForm />
+            {formContent}
           </div>
         </DrawerContent>
       </Drawer>
@@ -549,7 +572,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
             競技プログラミングの問題を練習リストに追加してください
           </DialogDescription>
         </DialogHeader>
-        <TaskForm />
+        {formContent}
       </DialogContent>
     </Dialog>
   )
