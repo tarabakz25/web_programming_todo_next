@@ -317,6 +317,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
   const isMobile = useIsMobile()
   const [open, setOpen] = React.useState(false)
   const [dueDate, setDueDate] = React.useState<string>("")
+  const formRef = React.useRef<HTMLFormElement>(null)
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -337,13 +338,29 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
     }
 
     onAddTask(newTask)
+    
+    // フォームと状態を完全にリセット
+    e.currentTarget.reset()
+    setDueDate("")
     setOpen(false)
-    setDueDate("") // フォームリセット
+    
     toast.success("問題が追加されました")
   }
 
+  // ダイアログの開閉状態変更時の処理
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen)
+    if (!isOpen) {
+      // ダイアログが閉じられた時にフォームをリセット
+      setDueDate("")
+      if (formRef.current) {
+        formRef.current.reset()
+      }
+    }
+  }
+
   const TaskForm = () => (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-3">
         <Label htmlFor="title">問題名 *</Label>
         <Input id="title" name="title" placeholder="問題名を入力してください" required />
@@ -440,7 +457,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
         <Button 
           type="button" 
           variant="outline" 
-          onClick={() => setOpen(false)}
+          onClick={() => handleOpenChange(false)}
           className="flex-1"
         >
           キャンセル
@@ -451,7 +468,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerTrigger asChild>
           <Button variant="outline" size="sm" className="flex-shrink-0">
             <IconPlus className="h-4 w-4" />
@@ -474,7 +491,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="flex-shrink-0">
           <IconPlus className="h-4 w-4" />

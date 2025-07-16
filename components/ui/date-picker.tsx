@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CalendarIcon } from "@tabler/icons-react"
+import { IconCalendar } from "@tabler/icons-react"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
 
@@ -60,7 +60,7 @@ export function DatePicker({
           )}
           disabled={disabled}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
+          <IconCalendar className="mr-2 h-4 w-4" />
           {dateValue ? (
             format(dateValue, "yyyy年MM月dd日", { locale: ja })
           ) : (
