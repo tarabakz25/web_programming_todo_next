@@ -81,12 +81,12 @@ export default function ChartArea({ tasks }: ChartAreaProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>競プロ日別進捗</CardTitle>
-        <CardDescription>
+      <CardHeader className="pb-3 sm:pb-6">
+        <CardTitle className="text-base sm:text-lg">競プロ日別進捗</CardTitle>
+        <CardDescription className="text-sm">
           過去30日間の日別タスク完了数
         </CardDescription>
-        <div className="flex gap-4 text-sm">
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-4 text-sm">
           <div>
             <span className="font-medium">総完了数:</span> {totalCompletedTasks}
           </div>
@@ -95,14 +95,16 @@ export default function ChartArea({ tasks }: ChartAreaProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[200px] w-full">
+      <CardContent className="pt-0">
+        <ChartContainer config={chartConfig} className="h-[150px] sm:h-[200px] w-full">
           <AreaChart
             accessibilityLayer
             data={chartData}
             margin={{
-              left: 12,
-              right: 12,
+              left: 8,
+              right: 8,
+              top: 4,
+              bottom: 4,
             }}
           >
             <CartesianGrid vertical={false} />
@@ -112,12 +114,14 @@ export default function ChartArea({ tasks }: ChartAreaProps) {
               axisLine={false}
               tickMargin={8}
               interval="preserveStartEnd"
+              fontSize={12}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tickMargin={8}
               allowDecimals={false}
+              fontSize={12}
             />
             <ChartTooltip
               cursor={false}

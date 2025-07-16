@@ -366,7 +366,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-3">
           <Label htmlFor="status">ステータス</Label>
           <Select name="status" defaultValue="未着手">
@@ -400,7 +400,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-3">
           <Label htmlFor="difficulty">難易度</Label>
           <Select name="difficulty">
@@ -430,7 +430,7 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
         </div>
       </div>
 
-      <div className="flex gap-2 pt-4">
+      <div className="flex flex-col sm:flex-row gap-2 pt-4">
         <Button type="submit" className="flex-1">
           問題を追加
         </Button>
@@ -450,9 +450,9 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
-          <Button variant="outline" size="sm">
-            <IconPlus />
-            <span className="hidden lg:inline">問題を追加</span>
+          <Button variant="outline" size="sm" className="flex-shrink-0">
+            <IconPlus className="h-4 w-4" />
+            <span className="hidden sm:inline ml-2">問題を追加</span>
           </Button>
         </DrawerTrigger>
         <DrawerContent>
@@ -473,9 +473,9 @@ function AddTaskDialog({ onAddTask }: { onAddTask: (task: z.infer<typeof schema>
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <IconPlus />
-          <span className="hidden lg:inline">問題を追加</span>
+        <Button variant="outline" size="sm" className="flex-shrink-0">
+          <IconPlus className="h-4 w-4" />
+          <span className="hidden sm:inline ml-2">問題を追加</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
@@ -745,25 +745,16 @@ export function DataTable({
       {
         id: "actions",
         cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-                size="icon"
-              >
-                <IconDotsVertical />
-                <span className="sr-only">メニューを開く</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-32">
-              <DropdownMenuItem onClick={() => handleEditTask(row.original)}>編集</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDuplicateTask(row.original)}>複製</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSolutionNotes(row.original)}>解法メモ</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => handleDeleteTask(row.original.id)}>削除</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <TaskCellViewer item={row.original} onUpdateTask={handleUpdateTask} allTasks={data}>
+            <Button
+              variant="ghost"
+              className="text-muted-foreground flex size-8"
+              size="icon"
+            >
+              <IconDotsVertical />
+              <span className="sr-only">詳細を表示</span>
+            </Button>
+          </TaskCellViewer>
         ),
       },
     ],
@@ -812,15 +803,15 @@ export function DataTable({
     <>
     <Tabs
       defaultValue="problems"
-      className="w-full flex-col justify-start gap-6"
+      className="w-full flex-col justify-start gap-4 lg:gap-6"
     >
-      <div className="flex items-center justify-between px-4 lg:px-6">
+      <div className="flex flex-col gap-4 px-2 sm:px-4 lg:px-6 sm:flex-row sm:items-center sm:justify-between">
         <Label htmlFor="view-selector" className="sr-only">
           表示
         </Label>
         <Select defaultValue="problems">
           <SelectTrigger
-            className="flex w-fit @4xl/main:hidden"
+            className="flex w-full sm:w-fit @4xl/main:hidden"
             size="sm"
             id="view-selector"
           >
@@ -843,14 +834,14 @@ export function DataTable({
           </TabsTrigger>
           <TabsTrigger value="calendar">学習予定</TabsTrigger>
         </TabsList>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <IconLayoutColumns />
-                <span className="hidden lg:inline">列をカスタマイズ</span>
-                <span className="lg:hidden">列</span>
-                <IconChevronDown />
+              <Button variant="outline" size="sm" className="flex-shrink-0">
+                <IconLayoutColumns className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">列をカスタマイズ</span>
+                <span className="sm:hidden ml-2">列</span>
+                <IconChevronDown className="h-4 w-4 ml-1" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -882,67 +873,69 @@ export function DataTable({
       </div>
       <TabsContent
         value="problems"
-        className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
+        className="relative flex flex-col gap-4 overflow-auto px-2 sm:px-4 lg:px-6"
       >
         <div className="overflow-hidden rounded-lg border">
-          <DndContext
-            collisionDetection={closestCenter}
-            modifiers={[restrictToVerticalAxis]}
-            onDragEnd={handleDragEnd}
-            sensors={sensors}
-            id={sortableId}
-          >
-            <Table>
-              <TableHeader className="bg-muted sticky top-0 z-10">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead key={header.id} colSpan={header.colSpan}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </TableHead>
-                      )
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody className="**:data-[slot=table-cell]:first:w-8">
-                {table.getRowModel().rows?.length ? (
-                  <SortableContext
-                    items={dataIds}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {table.getRowModel().rows.map((row) => (
-                      <DraggableRow key={row.id} row={row} />
-                    ))}
-                  </SortableContext>
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
+          <div className="overflow-x-auto">
+            <DndContext
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis]}
+              onDragEnd={handleDragEnd}
+              sensors={sensors}
+              id={sortableId}
+            >
+              <Table className="min-w-full">
+                <TableHeader className="bg-muted sticky top-0 z-10">
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                        return (
+                          <TableHead key={header.id} colSpan={header.colSpan} className="whitespace-nowrap">
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
+                        )
+                      })}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody className="**:data-[slot=table-cell]:first:w-8">
+                  {table.getRowModel().rows?.length ? (
+                    <SortableContext
+                      items={dataIds}
+                      strategy={verticalListSortingStrategy}
                     >
-                      問題がありません。
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </DndContext>
+                      {table.getRowModel().rows.map((row) => (
+                        <DraggableRow key={row.id} row={row} />
+                      ))}
+                    </SortableContext>
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center"
+                      >
+                        問題がありません。
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </DndContext>
+          </div>
         </div>
-        <div className="flex items-center justify-between px-4">
-          <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
+        <div className="flex flex-col gap-4 px-2 sm:px-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-muted-foreground hidden flex-1 text-sm sm:flex">
             {table.getFilteredSelectedRowModel().rows.length} / {" "}
             {table.getFilteredRowModel().rows.length} 件選択中
           </div>
-          <div className="flex w-full items-center gap-8 lg:w-fit">
-            <div className="hidden items-center gap-2 lg:flex">
-              <Label htmlFor="rows-per-page" className="text-sm font-medium">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
+            <div className="hidden items-center gap-2 sm:flex">
+              <Label htmlFor="rows-per-page" className="text-sm font-medium whitespace-nowrap">
                 表示件数
               </Label>
               <Select
@@ -965,14 +958,14 @@ export function DataTable({
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex w-fit items-center justify-center text-sm font-medium">
+            <div className="flex items-center justify-center text-sm font-medium">
               {table.getState().pagination.pageIndex + 1} / {" "}
               {table.getPageCount()} ページ
             </div>
-            <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            <div className="flex items-center gap-2 justify-center">
               <Button
                 variant="outline"
-                className="hidden h-8 w-8 p-0 lg:flex"
+                className="hidden h-8 w-8 p-0 sm:flex"
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
               >
@@ -1001,7 +994,7 @@ export function DataTable({
               </Button>
               <Button
                 variant="outline"
-                className="hidden size-8 lg:flex"
+                className="hidden size-8 sm:flex"
                 size="icon"
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                 disabled={!table.getCanNextPage()}
@@ -1015,31 +1008,31 @@ export function DataTable({
       </TabsContent>
       <TabsContent
         value="progress"
-        className="flex flex-col px-4 lg:px-6"
+        className="flex flex-col px-2 sm:px-4 lg:px-6"
       >
-        <div className="grid gap-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-card rounded-lg border p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">{data.filter(task => task.status === "AC").length}</div>
-              <div className="text-sm text-muted-foreground">AC済み</div>
+        <div className="grid gap-4 lg:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-card rounded-lg border p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{data.filter(task => task.status === "AC").length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">AC済み</div>
             </div>
-            <div className="bg-card rounded-lg border p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">{data.filter(task => task.status === "挑戦中").length}</div>
-              <div className="text-sm text-muted-foreground">挑戦中</div>
+            <div className="bg-card rounded-lg border p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{data.filter(task => task.status === "挑戦中").length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">挑戦中</div>
             </div>
-            <div className="bg-card rounded-lg border p-4 text-center">
-              <div className="text-2xl font-bold text-yellow-600">{data.filter(task => task.status === "解答確認中").length}</div>
-              <div className="text-sm text-muted-foreground">解答確認中</div>
+            <div className="bg-card rounded-lg border p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-yellow-600">{data.filter(task => task.status === "解答確認中").length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">解答確認中</div>
             </div>
-            <div className="bg-card rounded-lg border p-4 text-center">
-              <div className="text-2xl font-bold text-gray-600">{data.filter(task => task.status === "未着手").length}</div>
-              <div className="text-sm text-muted-foreground">未着手</div>
+            <div className="bg-card rounded-lg border p-3 sm:p-4 text-center">
+              <div className="text-xl sm:text-2xl font-bold text-gray-600">{data.filter(task => task.status === "未着手").length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">未着手</div>
             </div>
           </div>
           
-          <div className="bg-card rounded-lg border p-4">
-            <h3 className="text-lg font-semibold mb-4">過去6ヶ月の進捗</h3>
-            <ChartContainer config={chartConfig} className="h-[300px]">
+          <div className="bg-card rounded-lg border p-3 sm:p-4">
+            <h3 className="text-base sm:text-lg font-semibold mb-4">過去6ヶ月の進捗</h3>
+            <ChartContainer config={chartConfig} className="h-[200px] sm:h-[300px]">
               <AreaChart
                 accessibilityLayer
                 data={generateChartData(data)}
@@ -1080,16 +1073,16 @@ export function DataTable({
           </div>
         </div>
       </TabsContent>
-      <TabsContent value="contests" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground">
+      <TabsContent value="contests" className="flex flex-col px-2 sm:px-4 lg:px-6">
+        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground text-sm sm:text-base">
           コンテスト情報がここに表示されます
         </div>
       </TabsContent>
       <TabsContent
         value="calendar"
-        className="flex flex-col px-4 lg:px-6"
+        className="flex flex-col px-2 sm:px-4 lg:px-6"
       >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground">
+        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground text-sm sm:text-base">
           学習スケジュールがここに表示されます
         </div>
       </TabsContent>
@@ -1161,10 +1154,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-function TaskCellViewer({ item, onUpdateTask, allTasks }: { 
+function TaskCellViewer({ item, onUpdateTask, allTasks, children }: { 
   item: z.infer<typeof schema>
   onUpdateTask: (id: number, updatedTask: Partial<z.infer<typeof schema>>) => void 
   allTasks: z.infer<typeof schema>[]
+  children?: React.ReactNode
 }) {
   const isMobile = useIsMobile()
   const [isOpen, setIsOpen] = React.useState(false)
@@ -1187,9 +1181,11 @@ function TaskCellViewer({ item, onUpdateTask, allTasks }: {
   return (
     <Drawer direction={isMobile ? "bottom" : "right"} open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
-        <Button variant="link" className="text-foreground w-fit px-0 text-left">
-          {item.title}
-        </Button>
+        {children ? children : (
+          <Button variant="link" className="text-foreground w-fit px-0 text-left">
+            {item.title}
+          </Button>
+        )}
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="gap-1">
@@ -1284,7 +1280,7 @@ function TaskCellViewer({ item, onUpdateTask, allTasks }: {
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="status">ステータス</Label>
                 <Select 
@@ -1322,7 +1318,7 @@ function TaskCellViewer({ item, onUpdateTask, allTasks }: {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="difficulty">難易度</Label>
                 <Select 
@@ -1353,7 +1349,7 @@ function TaskCellViewer({ item, onUpdateTask, allTasks }: {
                 />
               </div>
             </div>
-            <div className="flex gap-2 pt-4">
+            <div className="flex flex-col sm:flex-row gap-2 pt-4">
               <Button type="submit" className="flex-1">
                 保存
               </Button>
