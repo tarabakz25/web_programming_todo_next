@@ -198,10 +198,11 @@ function EditableCell({
       ? (() => {
           try {
             const date = new Date(value)
-            if (isNaN(date.getTime())) return "無効な日時"
-            return format(date, "yyyy年MM月dd日(E) HH:mm", { locale: ja })
+            if (isNaN(date.getTime())) return "無効な日付"
+            // YYYY-MM-DD形式で表示
+            return date.toISOString().split('T')[0]
           } catch {
-            return "無効な日時"
+            return "無効な日付"
           }
         })()
       : value || "未設定"
@@ -802,12 +803,26 @@ export function DataTable({
       {
         accessorKey: "dueDate",
         header: () => <div className="w-full text-center">目標日</div>,
-        cell: ({ row }) => (
-          <div className="flex items-center justify-center gap-2">
-            <IconCalendar className="size-4 text-muted-foreground" />
-            <span className="text-sm">{row.original.dueDate}</span>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const formatDate = (dateString: string) => {
+            if (!dateString) return "未設定"
+            try {
+              const date = new Date(dateString)
+              if (isNaN(date.getTime())) return "無効な日付"
+              // YYYY-MM-DD形式で表示
+              return date.toISOString().split('T')[0]
+            } catch {
+              return "無効な日付"
+            }
+          }
+          
+          return (
+            <div className="flex items-center justify-center gap-2">
+              <IconCalendar className="size-4 text-muted-foreground" />
+              <span className="text-sm">{formatDate(row.original.dueDate)}</span>
+            </div>
+          )
+        },
       },
 
       {
