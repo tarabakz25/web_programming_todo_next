@@ -118,6 +118,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { DateTimePicker } from "@/components/ui/date-time-picker"
 
 // インライン編集コンポーネント
 function EditableCell({ 
@@ -190,6 +191,16 @@ function EditableCell({
   }
 
   if (!isEditing) {
+    const displayValue = type === "date" && value 
+      ? new Date(value).toLocaleString('ja-JP', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : value || "未設定"
+
     return (
       <div 
         className={`cursor-pointer hover:bg-muted/50 rounded px-2 py-1 transition-colors ${className}`}
@@ -197,22 +208,29 @@ function EditableCell({
         role="button"
         tabIndex={0}
       >
-        {value || "未設定"}
+        {displayValue}
       </div>
     )
   }
 
   if (type === "date") {
     return (
-      <Input
-        type="date"
-        value={editValue}
-        onChange={(e) => setEditValue(e.target.value)}
-        onBlur={handleSave}
-        onKeyDown={handleKeyDown}
-        className="h-8 w-full"
-        autoFocus
-      />
+      <div className="w-full">
+        <DateTimePicker 
+          date={editValue ? new Date(editValue) : undefined}
+          onDateChange={(date) => {
+            const newValue = date ? date.toISOString() : ''
+            setEditValue(newValue)
+            if (newValue !== value) {
+              onSave(newValue)
+              toast.success("保存しました")
+            }
+            setIsEditing(false)
+          }}
+          placeholder="日時を選択"
+          className="h-8"
+        />
+      </div>
     )
   }
 
@@ -514,9 +532,23 @@ export function DataTable({
 
   const handleUpdateTask = React.useCallback((id: number, updatedTask: Partial<z.infer<typeof schema>>) => {
     setData((prevData) => {
-      const newData = prevData.map(task => 
-        task.id === id ? { ...task, ...updatedTask } : task
-      )
+      const newData = prevData.map(task => {
+        if (task.id === id) {
+          const updated = { ...task, ...updatedTask }
+          
+          // ステータスがACに変更された場合、完了日時を自動設定
+          if (updatedTask.status === "AC" && task.status !== "AC") {
+            updated.completionDate = new Date().toISOString()
+          }
+          // ステータスがAC以外に変更された場合、完了日時をクリア
+          else if (updatedTask.status && updatedTask.status !== "AC") {
+            updated.completionDate = undefined
+          }
+          
+          return updated
+        }
+        return task
+      })
       setStoredData(newData)
       return newData
     })
@@ -559,7 +591,7 @@ export function DataTable({
         accessorKey: "title",
         header: "問題名",
         cell: ({ row }) => {
-          return <TaskCellViewer item={row.original} onUpdateTask={handleUpdateTask} />
+          return <TaskCellViewer item={row.original} onUpdateTask={handleUpdateTask} allTasks={data} />
         },
         enableHiding: false,
       },
@@ -922,8 +954,67 @@ export function DataTable({
         value="progress"
         className="flex flex-col px-4 lg:px-6"
       >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground">
-          解答状況グラフがここに表示されます
+        <div className="grid gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-card rounded-lg border p-4 text-center">
+              <div className="text-2xl font-bold text-green-600">{data.filter(task => task.status === "AC").length}</div>
+              <div className="text-sm text-muted-foreground">AC済み</div>
+            </div>
+            <div className="bg-card rounded-lg border p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600">{data.filter(task => task.status === "挑戦中").length}</div>
+              <div className="text-sm text-muted-foreground">挑戦中</div>
+            </div>
+            <div className="bg-card rounded-lg border p-4 text-center">
+              <div className="text-2xl font-bold text-yellow-600">{data.filter(task => task.status === "解答確認中").length}</div>
+              <div className="text-sm text-muted-foreground">解答確認中</div>
+            </div>
+            <div className="bg-card rounded-lg border p-4 text-center">
+              <div className="text-2xl font-bold text-gray-600">{data.filter(task => task.status === "未着手").length}</div>
+              <div className="text-sm text-muted-foreground">未着手</div>
+            </div>
+          </div>
+          
+          <div className="bg-card rounded-lg border p-4">
+            <h3 className="text-lg font-semibold mb-4">過去6ヶ月の進捗</h3>
+            <ChartContainer config={chartConfig} className="h-[300px]">
+              <AreaChart
+                accessibilityLayer
+                data={generateChartData(data)}
+                margin={{
+                  left: 12,
+                  right: 12,
+                }}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="dot" />}
+                />
+                <Area
+                  dataKey="inProgress"
+                  type="natural"
+                  fill="var(--color-inProgress)"
+                  fillOpacity={0.6}
+                  stroke="var(--color-inProgress)"
+                  stackId="a"
+                />
+                <Area
+                  dataKey="completed"
+                  type="natural"
+                  fill="var(--color-completed)"
+                  fillOpacity={0.4}
+                  stroke="var(--color-completed)"
+                  stackId="a"
+                />
+              </AreaChart>
+            </ChartContainer>
+          </div>
         </div>
       </TabsContent>
       <TabsContent value="contests" className="flex flex-col px-4 lg:px-6">
@@ -943,14 +1034,38 @@ export function DataTable({
   )
 }
 
-const chartData = [
-  { month: "1月", completed: 18, inProgress: 8 },
-  { month: "2月", completed: 30, inProgress: 20 },
-  { month: "3月", completed: 23, inProgress: 12 },
-  { month: "4月", completed: 7, inProgress: 19 },
-  { month: "5月", completed: 20, inProgress: 13 },
-  { month: "6月", completed: 21, inProgress: 14 },
-]
+// チャートデータをタスクデータから動的に生成する関数
+const generateChartData = (tasks: z.infer<typeof schema>[]) => {
+  // 過去6ヶ月のデータを生成
+  const months = []
+  const today = new Date()
+  
+  for (let i = 5; i >= 0; i--) {
+    const targetMonth = new Date(today.getFullYear(), today.getMonth() - i, 1)
+    const monthName = targetMonth.toLocaleDateString('ja-JP', { month: 'long' })
+    
+    // その月に完了したタスク数をカウント
+    const completedInMonth = tasks.filter(task => {
+      if (task.status === "AC" && task.completionDate) {
+        const completionDate = new Date(task.completionDate)
+        return completionDate.getFullYear() === targetMonth.getFullYear() &&
+               completionDate.getMonth() === targetMonth.getMonth()
+      }
+      return false
+    }).length
+    
+    // その月に挑戦中のタスク数をカウント（現在月のみ）
+    const inProgressInMonth = i === 0 ? tasks.filter(task => task.status === "挑戦中").length : 0
+    
+    months.push({
+      month: monthName,
+      completed: completedInMonth,
+      inProgress: inProgressInMonth
+    })
+  }
+  
+  return months
+}
 
 const chartConfig = {
   completed: {
@@ -963,13 +1078,17 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-function TaskCellViewer({ item, onUpdateTask }: { 
+function TaskCellViewer({ item, onUpdateTask, allTasks }: { 
   item: z.infer<typeof schema>
   onUpdateTask: (id: number, updatedTask: Partial<z.infer<typeof schema>>) => void 
+  allTasks: z.infer<typeof schema>[]
 }) {
   const isMobile = useIsMobile()
   const [isOpen, setIsOpen] = React.useState(false)
   const [formData, setFormData] = React.useState(item)
+  
+  // 動的にチャートデータを生成
+  const chartData = React.useMemo(() => generateChartData(allTasks), [allTasks])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -1042,7 +1161,7 @@ function TaskCellViewer({ item, onUpdateTask }: {
               <Separator />
               <div className="grid gap-2">
                 <div className="flex gap-2 leading-none font-medium">
-                  今月は12問のAC達成{" "}
+                  今月は{chartData[chartData.length - 1]?.completed || 0}問のAC達成{" "}
                   <IconTrophy className="size-4" />
                 </div>
                 <div className="text-muted-foreground">
@@ -1143,12 +1262,11 @@ function TaskCellViewer({ item, onUpdateTask }: {
                 </Select>
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="dueDate">目標日</Label>
-                <Input 
-                  id="dueDate" 
-                  type="date" 
-                  value={formData.dueDate}
-                  onChange={(e) => handleInputChange('dueDate', e.target.value)}
+                <Label htmlFor="dueDate">目標日時</Label>
+                <DateTimePicker 
+                  date={formData.dueDate ? new Date(formData.dueDate) : undefined}
+                  onDateChange={(date) => handleInputChange('dueDate', date ? date.toISOString() : '')}
+                  placeholder="目標日時を選択"
                 />
               </div>
             </div>

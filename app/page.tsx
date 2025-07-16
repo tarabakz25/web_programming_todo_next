@@ -2,6 +2,7 @@
 
 import { DataTable } from "@/components/TaskTable";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import ChartArea from "@/components/ChartArea";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Task } from "@/types/task";
@@ -16,6 +17,7 @@ export default function Home() {
         <DataTable data={tasks} />
         <ChartArea tasks={tasks} />
       </div>
+      <Footer />
     </div>
   )
 }
