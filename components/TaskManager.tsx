@@ -36,10 +36,48 @@ export default function TaskManager() {
     ))
   }
 
+  function updateTask(id: number, updatedTask: Partial<Task>) {
+    setTasks(tasks.map(task => 
+      task.id === id 
+      ? { ...task, ...updatedTask }
+      : task
+    ))
+  }
+
+  function duplicateTask(id: number) {
+    const taskToDuplicate = tasks.find(task => task.id === id);
+    if (taskToDuplicate) {
+      const newTask: Task = {
+        ...taskToDuplicate,
+        id: Date.now(), // 新しいIDを生成
+        title: `${taskToDuplicate.title} (コピー)`,
+        status: '未着手', // 複製されたタスクは未着手状態
+        completionDate: undefined // 完了日時はリセット
+      };
+      setTasks([...tasks, newTask]);
+    }
+  }
+
+  function deleteTask(id: number) {
+    setTasks(tasks.filter(task => task.id !== id));
+  }
+
+  function updateSolutionNotes(id: number, notes: string) {
+    setTasks(tasks.map(task => 
+      task.id === id 
+      ? { ...task, solutionNotes: notes }
+      : task
+    ))
+  }
+
   return {
     tasks,
     addTask,
     toggleTask,
-    updateTaskStatus
+    updateTaskStatus,
+    updateTask,
+    duplicateTask,
+    deleteTask,
+    updateSolutionNotes
   };
 }

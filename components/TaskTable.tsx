@@ -119,6 +119,8 @@ import {
 } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { DateTimePicker } from "@/components/ui/date-time-picker"
+import { format } from "date-fns"
+import { ja } from "date-fns/locale"
 
 // インライン編集コンポーネント
 function EditableCell({ 
@@ -192,13 +194,15 @@ function EditableCell({
 
   if (!isEditing) {
     const displayValue = type === "date" && value 
-      ? new Date(value).toLocaleString('ja-JP', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        })
+      ? (() => {
+          try {
+            const date = new Date(value)
+            if (isNaN(date.getTime())) return "無効な日時"
+            return format(date, "yyyy年MM月dd日(E) HH:mm", { locale: ja })
+          } catch {
+            return "無効な日時"
+          }
+        })()
       : value || "未設定"
 
     return (
@@ -258,6 +262,7 @@ export const schema = z.object({
   tags: z.array(z.string()),
   problemUrl: z.string(),
   completionDate: z.string().optional(),
+  solutionNotes: z.string().optional(),
 })
 
 // Create a separate component for the drag handle
@@ -510,6 +515,10 @@ export function DataTable({
     pageIndex: 0,
     pageSize: 10,
   })
+
+  // ダイアログ管理のためのstate
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
+  const [taskToDelete, setTaskToDelete] = React.useState<number | null>(null)
   const sortableId = React.useId()
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -553,6 +562,59 @@ export function DataTable({
       return newData
     })
   }, [setStoredData])
+
+  // タスク操作関数
+  const handleEditTask = React.useCallback((task: z.infer<typeof schema>) => {
+    // 簡易編集：タイトルのみ編集可能
+    const newTitle = prompt('タスクのタイトルを編集してください', task.title)
+    if (newTitle && newTitle !== task.title) {
+      handleUpdateTask(task.id, { title: newTitle })
+      toast.success('タスクを更新しました')
+    }
+  }, [handleUpdateTask])
+
+  const handleDuplicateTask = React.useCallback((task: z.infer<typeof schema>) => {
+    const newTask: z.infer<typeof schema> = {
+      ...task,
+      id: Date.now(),
+      title: `${task.title} (コピー)`,
+      status: '未着手',
+      completionDate: undefined
+    }
+    setData((prevData) => {
+      const newData = [...prevData, newTask]
+      setStoredData(newData)
+      return newData
+    })
+    toast.success('タスクを複製しました')
+  }, [setStoredData])
+
+  const handleDeleteTask = React.useCallback((id: number) => {
+    setTaskToDelete(id)
+    setIsDeleteDialogOpen(true)
+  }, [])
+
+  const confirmDeleteTask = React.useCallback(() => {
+    if (taskToDelete !== null) {
+      setData((prevData) => {
+        const newData = prevData.filter(task => task.id !== taskToDelete)
+        setStoredData(newData)
+        return newData
+      })
+      toast.success('タスクを削除しました')
+      setIsDeleteDialogOpen(false)
+      setTaskToDelete(null)
+    }
+  }, [taskToDelete, setStoredData])
+
+  const handleSolutionNotes = React.useCallback((task: z.infer<typeof schema>) => {
+    const currentNotes = task.solutionNotes || ''
+    const newNotes = prompt('解法メモを入力してください', currentNotes)
+    if (newNotes !== null) {
+      handleUpdateTask(task.id, { solutionNotes: newNotes })
+      toast.success('解法メモを保存しました')
+    }
+  }, [handleUpdateTask])
 
   const columns: ColumnDef<z.infer<typeof schema>>[] = React.useMemo(
     () => [
@@ -682,7 +744,7 @@ export function DataTable({
 
       {
         id: "actions",
-        cell: () => (
+        cell: ({ row }) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -695,11 +757,11 @@ export function DataTable({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-32">
-              <DropdownMenuItem>編集</DropdownMenuItem>
-              <DropdownMenuItem>複製</DropdownMenuItem>
-              <DropdownMenuItem>解法メモ</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleEditTask(row.original)}>編集</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDuplicateTask(row.original)}>複製</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSolutionNotes(row.original)}>解法メモ</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive">削除</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => handleDeleteTask(row.original.id)}>削除</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ),
@@ -747,6 +809,7 @@ export function DataTable({
   }
 
   return (
+    <>
     <Tabs
       defaultValue="problems"
       className="w-full flex-col justify-start gap-6"
@@ -1031,6 +1094,26 @@ export function DataTable({
         </div>
       </TabsContent>
     </Tabs>
+
+    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>タスクを削除</DialogTitle>
+          <DialogDescription>
+            このタスクを削除してもよろしいですか？この操作は取り消せません。
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex gap-2 pt-4">
+          <Button variant="destructive" onClick={confirmDeleteTask}>
+            削除
+          </Button>
+          <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            キャンセル
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
 

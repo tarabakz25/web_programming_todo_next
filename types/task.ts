@@ -12,6 +12,7 @@ export interface Task {
   tags: string[];
   problemUrl: string;
   completionDate?: string; // タスク完了日時を追跡
+  solutionNotes?: string; // 解法メモフィールドを追加
 }
 
 export interface Category {
