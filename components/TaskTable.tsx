@@ -62,6 +62,7 @@ import { toast } from "sonner"
 import { z } from "zod"
 
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useLocalStorage } from "@/hooks/useLocalStorage"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -558,7 +559,14 @@ export function DataTable({
 }: {
   data: z.infer<typeof schema>[]
 }) {
-  const [data, setData] = React.useState(() => initialData)
+  const [storedData, setStoredData] = useLocalStorage<z.infer<typeof schema>[]>('tasks', initialData)
+  const [data, setData] = React.useState(() => storedData)
+  
+  // storedDataが変更されたときにdataを同期
+  React.useEffect(() => {
+    setData(storedData)
+  }, [storedData])
+  
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
@@ -613,13 +621,19 @@ export function DataTable({
       setData((data) => {
         const oldIndex = dataIds.indexOf(active.id)
         const newIndex = dataIds.indexOf(over.id)
-        return arrayMove(data, oldIndex, newIndex)
+        const newData = arrayMove(data, oldIndex, newIndex)
+        setStoredData(newData)
+        return newData
       })
     }
   }
 
   const handleAddTask = (newTask: z.infer<typeof schema>) => {
-    setData((prevData) => [...prevData, newTask])
+    setData((prevData) => {
+      const newData = [...prevData, newTask]
+      setStoredData(newData)
+      return newData
+    })
   }
 
   return (

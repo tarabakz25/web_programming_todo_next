@@ -6,7 +6,7 @@ export function useLocalStorage<T>(key: string, init: T) {
 
   useEffect(() => {
     setIsHydrated(true);
-    if (typeof window === 'undefined') {
+    if (typeof window !== 'undefined') {
       try {
         const item = window.localStorage.getItem(key);
         if (item) {
